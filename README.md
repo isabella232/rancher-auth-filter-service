@@ -14,8 +14,7 @@ A microservice that does micro things.
 
 
 
-USAGE:
-   ｀rancher-auth-filter-service [global options] command [command options] [arguments...]｀
+`USAGE:rancher-auth-filter-service [global options] command [command options] [arguments...]`
 
 VERSION:
    v0.1.0-dev
