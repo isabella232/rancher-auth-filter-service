@@ -1,12 +1,18 @@
 #!/bin/bash
 set -e
 
-cd $(dirname $0)/..
+source $(dirname $0)/version
 
-if [ ! -e bin/rancher-auth-service ]; then
-    ./scripts/build
-fi
+ARCH=${ARCH:?"ARCH not set"}
+SUFFIX=""
+[ "${ARCH}" != "amd64" ] && SUFFIX="_${ARCH}"
 
-mkdir -p dist/artifacts
-cd bin/
-tar cvJf ../dist/artifacts/rancher-auth-service.tar.xz .
+cd $(dirname $0)/../package
+
+TAG=${TAG:-${VERSION}${SUFFIX}}
+REPO=${REPO:-rancher}
+
+cp ../bin/rancher-auth-filter-service .
+docker build -t ${REPO}/rancher-auth-filter-service:${TAG} .
+
+echo Built ${REPO}/rancher-auth-filter-service:${TAG}

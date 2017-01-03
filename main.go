@@ -1,137 +1,50 @@
 package main
 
 import (
-	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/rancher/rancher-auth-service/server"
-	"github.com/rancher/rancher-auth-service/service"
-	"github.com/urfave/cli"
 	"net/http"
 	"os"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/rancher/rancher-auth-filter-service/manager"
+	"github.com/rancher/rancher-auth-filter-service/service"
+	"github.com/urfave/cli"
 )
 
-func beforeApp(c *cli.Context) error {
-	if c.GlobalBool("verbose") {
-		log.SetLevel(log.DebugLevel)
-	}
-	return nil
-}
+var VERSION = "v0.1.0-dev"
 
 func main() {
+	logrus.Infof("Starting authantication filtering Service")
+	//init parsing command line
 	app := cli.NewApp()
-	app.Name = "rancher-auth-service"
-	app.Usage = "Rancher auth service supporting external auth providers"
-	app.Author = "Rancher Labs, Inc."
-	app.Email = ""
-	app.Before = beforeApp
-	app.Action = StartService
+	app.Name = "rancher-auth-filter-service"
+	app.Version = "v0.1.0-dev"
+	app.Usage = "Rancher authantication Filter Service"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name: "rsa-public-key-file",
-			Usage: fmt.Sprintf(
-				"Specify the path to the file containing RSA public key",
-			),
+			Name:  "rancherUrl",
+			Value: "http://54.255.182.226:8080/",
+			Usage: "Rancher server url",
 		},
 		cli.StringFlag{
-			Name: "rsa-private-key-file",
-			Usage: fmt.Sprintf(
-				"Specify the path to the file containing RSA private key",
-			),
+			Name:  "localport",
+			Value: "8080",
+			Usage: "Local server port ",
 		},
-		cli.StringFlag{
-			Name: "rsa-public-key-contents",
-			Usage: fmt.Sprintf(
-				"An alternative to  rsa-public-key-file. Specify the contents of the key.",
-			),
-			EnvVar: "RSA_PUBLIC_KEY_CONTENTS",
-		},
-		cli.StringFlag{
-			Name: "rsa-private-key-contents",
-			Usage: fmt.Sprintf(
-				"An alternative to rsa-private-key-file. Specify the contents of the key.",
-			),
-			EnvVar: "RSA_PRIVATE_KEY_CONTENTS",
-		},
-		cli.StringFlag{
-			Name: "cattle-url",
-			Usage: fmt.Sprintf(
-				"Specify Cattle endpoint URL",
-			),
-			EnvVar: "CATTLE_URL",
-		},
-		cli.StringFlag{
-			Name: "cattle-access-key",
-			Usage: fmt.Sprintf(
-				"Specify Cattle access key",
-			),
-			EnvVar: "CATTLE_ACCESS_KEY",
-		},
-		cli.StringFlag{
-			Name: "cattle-secret-key",
-			Usage: fmt.Sprintf(
-				"Specify Cattle secret key",
-			),
-			EnvVar: "CATTLE_SECRET_KEY",
-		},
-		cli.BoolFlag{
-			Name: "debug",
-			Usage: fmt.Sprintf(
-				"Set true to get debug logs",
-			),
-		},
-		cli.StringFlag{
-			Name:  "listen",
-			Value: ":8090",
-			Usage: fmt.Sprintf(
-				"Address to listen to (TCP)",
-			),
-		},
-		cli.StringFlag{
-			Name: "self-signed-key-file",
-			Usage: fmt.Sprintf(
-				"Specify the path to the file containing a self signed certificate's key",
-			),
-		},
-		cli.StringFlag{
-			Name: "self-signed-cert-file",
-			Usage: fmt.Sprintf(
-				"Specify the path to the file containing a self signed certificate",
-			),
-		},
-		cli.StringFlag{
-			Name: "idp-metadata-file",
-			Usage: fmt.Sprintf(
-				"Specify the path to the file containing SAML/Shibboleth IDP Metadata file",
-			),
-		},
+	}
+
+	app.Action = func(c *cli.Context) error {
+		manager.Url = c.String("rancherUrl")
+		manager.Port = c.String("localport")
+		logrus.Infof("Rancher server URL:" + manager.Url + " The validation filter server running on local port:" + manager.Port)
+		//create mux router
+		router := service.NewRouter()
+		http.Handle("/", router)
+		serverString := ":" + manager.Port
+		//start local server
+		logrus.Fatal(http.ListenAndServe(serverString, nil))
+		return nil
 	}
 
 	app.Run(os.Args)
-}
-
-func StartService(c *cli.Context) {
-
-	server.SetEnv(c)
-
-	if c.GlobalBool("debug") {
-		log.SetLevel(log.DebugLevel)
-	}
-
-	textFormatter := &log.TextFormatter{
-		FullTimestamp: true,
-	}
-	log.SetFormatter(textFormatter)
-
-	log.Info("Starting Rancher Auth service")
-
-	err := server.Reload()
-	if err != nil {
-		log.Fatalf("Failed to reload the auth provider from db on start: %v", err)
-	}
-
-	router := service.NewRouter()
-
-	log.Info("Listening on ", c.GlobalString("listen"))
-	log.Fatal(http.ListenAndServe(c.GlobalString("listen"), router))
 
 }

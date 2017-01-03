@@ -1,49 +1,28 @@
-# rancher-auth-service
-A REST Service listening on port 8090 that implements authentication Identity providers to support the Rancher Auth Framework. Initial version comes with github support. It uses the pluggable provider model to implement other providers later. 
+rancher-auth-filter-service
+========
+
+A microservice that does micro things.
+
+## Building
+
+`make`
 
 
-APIs exposed are:
+## Running
 
-POST /v1-rancher-auth/config
-This will save the provided config to the Cattle Database as settings and initialize the auth provider with the given config
+`./bin/rancher-auth-filter-service`
 
-GET /v1-rancher-auth/config
-This will list the auth config from settings table in Cattle Database
+## License
+Copyright (c) 2014-2016 [Rancher Labs, Inc.](http://rancher.com)
 
-POST /v1-rancher-auth/reload
-This will read the auth config from settings table in Cattle Database and re-initialize the auth provider
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-POST /v1-rancher-auth/token  
-This API authenticates with the actual auth provider(like github) and returns a JWT token to be used for further communication with the service
+[http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
-GET /v1-rancher-auth/me/identities
-This API lists the user details and his/her group memberships, for the user identified by the token set in Authorization header
-
-GET /v1-rancher-auth/identities?name=
-This API searches for a user/group by name on the backend auth provider
-
-GET /v1-rancher-auth/identities?externalId=&externalIdType=
-This API searches for a user/group by Id and type(user/group/team) on the backend auth provider
-
-# Build the go service
-godep go build
-
-# Run the go service
-
-Usage of ./rancher-auth-service:
-  -debug
-    	Debug
-  -log string
-    	Log file
-  -privateKeyFile string
-    	Path of file containing RSA Private key 
-  -publicKeyFile string
-    	Path of file containing RSA Public key
-
-The RSA public and private keys are needed to sign the JWT token provided by /token API
-
-# Required Environment Variables:
-
-Set the Cattle service account and secret key to the Environment
-export CATTLE_ACCESS_KEY= <service account key>
-export CATTLE_SECRET_KEY= <service account secret key>
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
