@@ -51,14 +51,21 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 				} else {
 					//construct the responseBody
 					var headerBody map[string][]string = make(map[string][]string)
+					var Body map[string]interface{} = make(map[string]interface{})
+
 					requestHeader := reqestData.Headers
 					for k, v := range requestHeader {
 						headerBody[k] = v
 					}
+					requestBody := reqestData.Body
+					for k, v := range requestBody {
+						Body[k] = v
+					}
 					headerBody["X-API-Project-Id"] = projectID
 					headerBody["X-API-Account-Id"] = accountID
-					var responseBody map[string]map[string][]string = make(map[string]map[string][]string)
-					responseBody["headers"] = headerBody
+					var responseBody RequestData
+					responseBody.Headers = headerBody
+					responseBody.Body = Body
 					//convert the map to JSON format
 					if responseBodyString, err := json.Marshal(responseBody); err != nil {
 						panic(err)
