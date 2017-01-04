@@ -12,31 +12,6 @@ A microservice that does micro things.
 
 `./bin/rancher-auth-filter-service`
 
-
-
-`USAGE:rancher-auth-filter-service [global options] command [command options] [arguments...]`
-
-VERSION:
-   v0.1.0-dev
-   
-
-COMMANDS:
-     help, h  Shows a list of commands or help for one command
-     
-
-GLOBAL OPTIONS:
-
-   --rancherUrl value  Rancher server url (default: "http://54.255.182.226:8080/")
-   
-   --localport value   Local server port  (default: "8080")
-   
-   --help, -h          show help
-   
-   --version, -v       print the version
-   
-
-
-
 ## License
 Copyright (c) 2014-2016 [Rancher Labs, Inc.](http://rancher.com)
 
