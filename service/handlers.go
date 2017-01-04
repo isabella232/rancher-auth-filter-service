@@ -5,33 +5,54 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/rancher/rancher-auth-filter-service/manager"
 )
 
+type RequestData struct {
+	Headers map[string][]string    `json:"headers,omitempty"`
+	Body    map[string]interface{} `json:"body,omitempty"`
+}
+
 //ValidationHandler is a handler for cookie token and returns the request headers and accountid and projectid
 func ValidationHandler(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("token")
+	reqestData := RequestData{}
+	input, err := ioutil.ReadAll(r.Body)
+	jsonInput, _ := simplejson.NewJson(input)
+	json.Unmarshal(input, &reqestData)
+	cookieString, err := jsonInput.Get("headers").Get("Cookie").GetIndex(0).String()
+	tokens := strings.Split(cookieString, ";")
+	var tokenValue string
+	for i := range tokens {
+		if strings.Contains(tokens[i], "token") {
+			tokenValue = strings.Split(tokens[i], "=")[1]
+		}
+
+	}
+	fmt.Println("tokenValue" + tokenValue)
+	logrus.Infof("token from post body:" + tokenValue)
 	if err == nil {
 		//check if the token value is empty or not
-		if cookie.Value != "" {
-			logrus.Infof("token:" + cookie.Value)
-			accountID := getValue(manager.Url, "accounts", cookie.Value)
-			projectID := getValue(manager.Url, "projects", cookie.Value)
+		if tokenValue != "" {
+			logrus.Infof("token:" + tokenValue)
+			accountID := getValue(manager.Url, "accounts", tokenValue)
+			projectID := getValue(manager.Url, "projects", tokenValue)
 			//check if the accountID or projectID is empty
 			if accountID[0] != "" && projectID[0] != "" {
-				if accountID[0] == "Unauthorized" || projectID[0] == "Unauthorized" {
+				if accountID[0] == "Unauthorized" || projectID[0] == "Unasuthorized" {
 					w.WriteHeader(401)
-					logrus.Infof("Token is not valid." + cookie.Value)
+					logrus.Infof("Token is not valid." + tokenValue)
 				} else if accountID[0] == "ID_NOT_FIND" || projectID[0] == "ID_NOT_FIND" {
 					w.WriteHeader(501)
 					logrus.Infof("Cannot provide the service. Please check the rancher server URL." + manager.Url)
 				} else {
 					//construct the responseBody
 					var headerBody map[string][]string = make(map[string][]string)
-					for k, v := range r.Header {
+					requestHeader := reqestData.Headers
+					for k, v := range requestHeader {
 						headerBody[k] = v
 					}
 					headerBody["X-API-Project-Id"] = projectID
@@ -42,7 +63,8 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 					if responseBodyString, err := json.Marshal(responseBody); err != nil {
 						panic(err)
 					} else {
-						fmt.Fprintln(w, string(responseBodyString))
+						w.WriteHeader(http.StatusOK)
+						w.Write(responseBodyString)
 					}
 				}
 			}
