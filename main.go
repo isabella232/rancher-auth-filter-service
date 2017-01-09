@@ -21,14 +21,16 @@ func main() {
 	app.Usage = "Rancher authantication Filter Service"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:  "rancherUrl",
-			Value: "http://54.255.182.226:8080/",
-			Usage: "Rancher server url",
+			Name:   "rancherUrl",
+			Value:  "http://54.255.182.226:8080/",
+			Usage:  "Rancher server url",
+			EnvVar: "RANCHER_SERVER_URL",
 		},
 		cli.StringFlag{
-			Name:  "localport",
-			Value: "8080",
-			Usage: "Local server port ",
+			Name:   "localport",
+			Value:  "8080",
+			Usage:  "Local server port ",
+			EnvVar: "LOCAL_VALIDATION_FILTER_PORT",
 		},
 	}
 
