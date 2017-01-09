@@ -12,6 +12,7 @@ import (
 	"github.com/rancher/rancher-auth-filter-service/manager"
 )
 
+//RequestData is for the JSON output
 type RequestData struct {
 	Headers map[string][]string    `json:"headers,omitempty"`
 	Body    map[string]interface{} `json:"body,omitempty"`
@@ -33,7 +34,6 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 	fmt.Println("tokenValue" + tokenValue)
-	logrus.Infof("token from post body:" + tokenValue)
 	if err == nil {
 		//check if the token value is empty or not
 		if tokenValue != "" {
@@ -42,7 +42,7 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 			projectID := getValue(manager.URL, "projects", tokenValue)
 			//check if the accountID or projectID is empty
 			if accountID[0] != "" && projectID[0] != "" {
-				if accountID[0] == "Unauthorized" || projectID[0] == "Unasuthorized" {
+				if accountID[0] == "Unauthorized" || projectID[0] == "Unauthorized" {
 					w.WriteHeader(401)
 					logrus.Infof("Token is not valid." + tokenValue)
 				} else if accountID[0] == "ID_NOT_FIND" || projectID[0] == "ID_NOT_FIND" {

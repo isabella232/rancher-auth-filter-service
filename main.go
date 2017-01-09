@@ -10,15 +10,16 @@ import (
 	"github.com/urfave/cli"
 )
 
+//VERSION for Rancher Authantication Filter Service
 var VERSION = "v0.1.0-dev"
 
 func main() {
-	logrus.Infof("Starting authantication filtering Service")
+	logrus.Infof("Starting Authantication filtering Service")
 	//init parsing command line
 	app := cli.NewApp()
 	app.Name = "rancher-auth-filter-service"
 	app.Version = "v0.1.0-dev"
-	app.Usage = "Rancher authantication Filter Service"
+	app.Usage = "Rancher Authantication Filter Service"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "rancherUrl",
