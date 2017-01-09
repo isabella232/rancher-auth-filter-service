@@ -38,8 +38,8 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 		//check if the token value is empty or not
 		if tokenValue != "" {
 			logrus.Infof("token:" + tokenValue)
-			accountID := getValue(manager.Url, "accounts", tokenValue)
-			projectID := getValue(manager.Url, "projects", tokenValue)
+			accountID := getValue(manager.URL, "accounts", tokenValue)
+			projectID := getValue(manager.URL, "projects", tokenValue)
 			//check if the accountID or projectID is empty
 			if accountID[0] != "" && projectID[0] != "" {
 				if accountID[0] == "Unauthorized" || projectID[0] == "Unasuthorized" {
@@ -47,11 +47,11 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 					logrus.Infof("Token is not valid." + tokenValue)
 				} else if accountID[0] == "ID_NOT_FIND" || projectID[0] == "ID_NOT_FIND" {
 					w.WriteHeader(501)
-					logrus.Infof("Cannot provide the service. Please check the rancher server URL." + manager.Url)
+					logrus.Infof("Cannot provide the service. Please check the rancher server URL." + manager.URL)
 				} else {
 					//construct the responseBody
-					var headerBody map[string][]string = make(map[string][]string)
-					var Body map[string]interface{} = make(map[string]interface{})
+					var headerBody = make(map[string][]string)
+					var Body = make(map[string]interface{})
 
 					requestHeader := reqestData.Headers
 					for k, v := range requestHeader {

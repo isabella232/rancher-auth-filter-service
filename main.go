@@ -33,9 +33,9 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		manager.Url = c.String("rancherUrl")
+		manager.URL = c.String("rancherUrl")
 		manager.Port = c.String("localport")
-		logrus.Infof("Rancher server URL:" + manager.Url + " The validation filter server running on local port:" + manager.Port)
+		logrus.Infof("Rancher server URL:" + manager.URL + " The validation filter server running on local port:" + manager.Port)
 		//create mux router
 		router := service.NewRouter()
 		http.Handle("/", router)
