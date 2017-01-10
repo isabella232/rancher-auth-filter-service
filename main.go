@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -56,7 +57,7 @@ func main() {
 		cleanupInterval := time.Duration(c.Int("cleanupInterval"))
 		manager.CacheProjectID = cache.New(expiretime*time.Hour, cleanupInterval*time.Hour)
 		logrus.Infof("Starting Authantication filtering Service")
-		logrus.Infof("Rancher server URL:" + manager.URL + " The validation filter server running on local port:" + manager.Port)
+		logrus.Infof("Rancher server URL:" + manager.URL + ". The validation filter server running on local port:" + manager.Port + ". Cache expire time is " + strconv.Itoa(c.Int("cacheExpireTime")) + ". Cache clean up interval is " + strconv.Itoa(c.Int("cleanupInterval")) + ".")
 		//create mux router
 		router := service.NewRouter()
 		http.Handle("/", router)
