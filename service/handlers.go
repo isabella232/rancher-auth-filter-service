@@ -2,13 +2,13 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
 	simplejson "github.com/bitly/go-simplejson"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/rancher/rancher-auth-filter-service/manager"
 )
 
@@ -20,6 +20,7 @@ type RequestData struct {
 
 //ValidationHandler is a handler for cookie token and returns the request headers and accountid and projectid
 func ValidationHandler(w http.ResponseWriter, r *http.Request) {
+
 	reqestData := RequestData{}
 	input, err := ioutil.ReadAll(r.Body)
 	jsonInput, _ := simplejson.NewJson(input)
@@ -33,19 +34,27 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-	fmt.Println("tokenValue" + tokenValue)
+
 	if err == nil {
 		//check if the token value is empty or not
 		if tokenValue != "" {
+			var projectID []string
 			logrus.Infof("token:" + tokenValue)
-			accountID := getValue(manager.URL, "accounts", tokenValue)
-			projectID := getValue(manager.URL, "projects", tokenValue)
+			cachedValue, foundInCache := manager.CacheProjectID.Get(tokenValue)
+			//if token find in the memory cache, then will not call the rancher api
+			if foundInCache {
+				cacheprojectid := cachedValue.([]string)
+				projectID = cacheprojectid
+			} else {
+				projectID = getValue(manager.URL, "projects", tokenValue)
+			}
+
 			//check if the accountID or projectID is empty
-			if accountID[0] != "" && projectID[0] != "" {
-				if accountID[0] == "Unauthorized" || projectID[0] == "Unauthorized" {
+			if projectID[0] != "" {
+				if projectID[0] == "Unauthorized" {
 					w.WriteHeader(401)
-					logrus.Infof("Token is not valid." + tokenValue)
-				} else if accountID[0] == "ID_NOT_FIND" || projectID[0] == "ID_NOT_FIND" {
+					logrus.Infof("Token " + tokenValue + " is not valid.")
+				} else if projectID[0] == "ID_NOT_FIND" {
 					w.WriteHeader(501)
 					logrus.Infof("Cannot provide the service. Please check the rancher server URL." + manager.URL)
 				} else {
@@ -61,8 +70,16 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 					for k, v := range requestBody {
 						Body[k] = v
 					}
+					//if the token not find in cache, add new token into cache
+					if !foundInCache {
+						manager.CacheProjectID.Set(tokenValue, projectID, cache.DefaultExpiration)
+						logrus.Infof("Token " + tokenValue + " set into the cache.")
+					}
+
+					// _, found := manager.CacheProjectID.Get(tokenValue)
+					// fmt.Println("Find the cache value after set into cache: " + strconv.FormatBool(found))
 					headerBody["X-API-Project-Id"] = projectID
-					headerBody["X-API-Account-Id"] = accountID
+
 					var responseBody RequestData
 					responseBody.Headers = headerBody
 					responseBody.Body = Body
@@ -76,8 +93,14 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
+		} else {
+			logrus.Infof("No token found")
+			w.WriteHeader(401)
 		}
 
+	} else {
+		logrus.Infof("No token found")
+		w.WriteHeader(401)
 	}
 }
 
