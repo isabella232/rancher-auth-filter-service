@@ -38,16 +38,23 @@ func main() {
 		cli.IntFlag{
 			Name:   "cacheExpireTime",
 			Value:  16,
-			Usage:  "cache expire time",
-			EnvVar: "CACHE_EXPIRE_TIME",
+			Usage:  "cache expire time in hour",
+			EnvVar: "CACHE_EXPIRE_TIME_IN_HOUR",
+		},
+		cli.IntFlag{
+			Name:   "cleanupInterval",
+			Value:  1,
+			Usage:  "cache expire time in hour",
+			EnvVar: "CACHE_EXPIRE_TIME_IN_HOUR",
 		},
 	}
 
 	app.Action = func(c *cli.Context) error {
 		manager.URL = c.String("rancherUrl")
 		manager.Port = c.String("localport")
-		// expiretime := c.Int("cacheExpireTime")
-		manager.CacheProjectID = cache.New(16*time.Hour, 1*time.Hour)
+		expiretime := time.Duration(c.Int("cacheExpireTime"))
+		cleanupInterval := time.Duration(c.Int("cleanupInterval"))
+		manager.CacheProjectID = cache.New(expiretime*time.Hour, cleanupInterval*time.Hour)
 		logrus.Infof("Starting Authantication filtering Service")
 		logrus.Infof("Rancher server URL:" + manager.URL + " The validation filter server running on local port:" + manager.Port)
 		//create mux router
