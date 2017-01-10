@@ -44,8 +44,8 @@ func main() {
 		cli.IntFlag{
 			Name:   "cleanupInterval",
 			Value:  1,
-			Usage:  "cache expire time in hour",
-			EnvVar: "CACHE_EXPIRE_TIME_IN_HOUR",
+			Usage:  "clean up interval for cache in hour",
+			EnvVar: "CACHE_CLEANUP_INTERVAL_IN_HOUR",
 		},
 	}
 
