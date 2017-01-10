@@ -17,8 +17,6 @@ var VERSION = "v0.1.0-dev"
 
 func main() {
 
-	//init project id cache
-	manager.CacheProjectID = cache.New(16*time.Hour, 1*time.Hour)
 	///init parsing command line
 	app := cli.NewApp()
 	app.Name = "rancher-auth-filter-service"
@@ -37,11 +35,19 @@ func main() {
 			Usage:  "Local server port ",
 			EnvVar: "LOCAL_VALIDATION_FILTER_PORT",
 		},
+		cli.IntFlag{
+			Name:   "cacheExpireTime",
+			Value:  16,
+			Usage:  "cache expire time",
+			EnvVar: "CACHE_EXPIRE_TIME",
+		},
 	}
 
 	app.Action = func(c *cli.Context) error {
 		manager.URL = c.String("rancherUrl")
 		manager.Port = c.String("localport")
+		// expiretime := c.Int("cacheExpireTime")
+		manager.CacheProjectID = cache.New(16*time.Hour, 1*time.Hour)
 		logrus.Infof("Starting Authantication filtering Service")
 		logrus.Infof("Rancher server URL:" + manager.URL + " The validation filter server running on local port:" + manager.Port)
 		//create mux router
