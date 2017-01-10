@@ -18,7 +18,7 @@ var VERSION = "v0.1.0-dev"
 func main() {
 
 	//init project id cache
-	manager.CacheProjectID = cache.New(60*time.Hour, 1*time.Hour)
+	manager.CacheProjectID = cache.New(16*time.Hour, 1*time.Hour)
 	///init parsing command line
 	app := cli.NewApp()
 	app.Name = "rancher-auth-filter-service"

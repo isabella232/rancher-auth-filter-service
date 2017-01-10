@@ -13,4 +13,4 @@ var URL = "http://54.255.182.226:8080/"
 var Port = "8080"
 
 //CacheProjectID the project id
-var CacheProjectID = cache.New(60*time.Hour, 1*time.Hour)
+var CacheProjectID = cache.New(16*time.Hour, 1*time.Hour)
