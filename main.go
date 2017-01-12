@@ -4,10 +4,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/Sirupsen/logrus"
-	cache "github.com/patrickmn/go-cache"
 	"github.com/rancher/rancher-auth-filter-service/manager"
 	"github.com/rancher/rancher-auth-filter-service/service"
 	"github.com/urfave/cli"
@@ -32,31 +30,25 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "localport",
-			Value:  "8080",
+			Value:  "8092",
 			Usage:  "Local server port ",
 			EnvVar: "LOCAL_VALIDATION_FILTER_PORT",
-		},
-		cli.IntFlag{
-			Name:   "cacheExpireTime",
-			Value:  16,
-			Usage:  "cache expire time in hour",
-			EnvVar: "CACHE_EXPIRE_TIME_IN_HOUR",
-		},
-		cli.IntFlag{
-			Name:   "cleanupInterval",
-			Value:  1,
-			Usage:  "clean up interval for cache in hour",
-			EnvVar: "CACHE_CLEANUP_INTERVAL_IN_HOUR",
 		},
 	}
 
 	app.Action = func(c *cli.Context) error {
+		if c.GlobalBool("debug") {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
+		textFormatter := &logrus.TextFormatter{
+			FullTimestamp: true,
+		}
+		logrus.SetFormatter(textFormatter)
+
 		manager.URL = c.String("rancherUrl")
 		manager.Port = c.String("localport")
-		expiretime := time.Duration(c.Int("cacheExpireTime"))
-		cleanupInterval := time.Duration(c.Int("cleanupInterval"))
-		manager.CacheProjectID = cache.New(expiretime*time.Hour, cleanupInterval*time.Hour)
-		logrus.Infof("Starting Authantication filtering Service")
+
+		logrus.Infof("Starting token validation service")
 		logrus.Infof("Rancher server URL:" + manager.URL + ". The validation filter server running on local port:" + manager.Port + ". Cache expire time is " + strconv.Itoa(c.Int("cacheExpireTime")) + ". Cache clean up interval is " + strconv.Itoa(c.Int("cleanupInterval")) + ".")
 		//create mux router
 		router := service.NewRouter()

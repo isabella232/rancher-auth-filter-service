@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	simplejson "github.com/bitly/go-simplejson"
-	cache "github.com/patrickmn/go-cache"
 	"github.com/rancher/rancher-auth-filter-service/manager"
 )
 
@@ -18,14 +16,23 @@ type RequestData struct {
 	Body    map[string]interface{} `json:"body,omitempty"`
 }
 
+//AuthorizeData is for the JSON output
+type AuthorizeData struct {
+	Message string `json:"message,omitempty"`
+}
+
+//MessageData is for the JSON output
+type MessageData struct {
+	Data []interface{} `json:"data,omitempty"`
+}
+
 //ValidationHandler is a handler for cookie token and returns the request headers and accountid and projectid
 func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 
 	reqestData := RequestData{}
 	input, err := ioutil.ReadAll(r.Body)
-	jsonInput, _ := simplejson.NewJson(input)
 	json.Unmarshal(input, &reqestData)
-	cookieString, err := jsonInput.Get("headers").Get("Cookie").GetIndex(0).String()
+	cookieString := reqestData.Headers["Cookie"][0]
 	tokens := strings.Split(cookieString, ";")
 	var tokenValue string
 	for i := range tokens {
@@ -36,25 +43,18 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err == nil {
+
 		//check if the token value is empty or not
 		if tokenValue != "" {
-			var projectID []string
 			logrus.Infof("token:" + tokenValue)
-			cachedValue, foundInCache := manager.CacheProjectID.Get(tokenValue)
-			//if token find in the memory cache, then will not call the rancher api
-			if foundInCache {
-				cacheprojectid := cachedValue.([]string)
-				projectID = cacheprojectid
-			} else {
-				projectID = getValue(manager.URL, "projects", tokenValue)
-			}
-
+			accountID := getValue(manager.URL, "accounts", tokenValue)
+			projectID := getValue(manager.URL, "projects", tokenValue)
 			//check if the accountID or projectID is empty
-			if projectID[0] != "" {
-				if projectID[0] == "Unauthorized" {
+			if accountID[0] != "" && projectID[0] != "" {
+				if accountID[0] == "Unauthorized" || projectID[0] == "Unasuthorized" {
 					w.WriteHeader(401)
-					logrus.Infof("Token " + tokenValue + " is not valid.")
-				} else if projectID[0] == "ID_NOT_FIND" {
+					logrus.Infof("Token is not valid." + tokenValue)
+				} else if accountID[0] == "ID_NOT_FIND" || projectID[0] == "ID_NOT_FIND" {
 					w.WriteHeader(501)
 					logrus.Infof("Cannot provide the service. Please check the rancher server URL." + manager.URL)
 				} else {
@@ -70,22 +70,14 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 					for k, v := range requestBody {
 						Body[k] = v
 					}
-					//if the token not find in cache, add new token into cache
-					if !foundInCache {
-						manager.CacheProjectID.Set(tokenValue, projectID, cache.DefaultExpiration)
-						logrus.Infof("Token " + tokenValue + " set into the cache.")
-					}
-
-					// _, found := manager.CacheProjectID.Get(tokenValue)
-					// fmt.Println("Find the cache value after set into cache: " + strconv.FormatBool(found))
 					headerBody["X-API-Project-Id"] = projectID
-
+					headerBody["X-API-Account-Id"] = accountID
 					var responseBody RequestData
 					responseBody.Headers = headerBody
 					responseBody.Body = Body
 					//convert the map to JSON format
 					if responseBodyString, err := json.Marshal(responseBody); err != nil {
-						panic(err)
+						logrus.Info(err)
 					} else {
 						w.WriteHeader(http.StatusOK)
 						w.Write(responseBodyString)
@@ -93,14 +85,7 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-		} else {
-			logrus.Infof("No token found")
-			w.WriteHeader(401)
 		}
-
-	} else {
-		logrus.Infof("No token found")
-		w.WriteHeader(401)
 	}
 }
 
@@ -114,21 +99,21 @@ func getValue(host string, path string, token string) []string {
 	req.AddCookie(&cookie)
 	resp, err := client.Do(req)
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.Infof("Cannot connect to the rancher server. Please check the rancher server URL")
+		result = []string{"ID_NOT_FIND"}
+		return result
 	}
 	bodyText, err := ioutil.ReadAll(resp.Body)
-	js, _ := simplejson.NewJson(bodyText)
-	authorized, _ := js.Get("message").String()
+	authMessage := AuthorizeData{}
+	json.Unmarshal(bodyText, &authMessage)
 
-	if authorized == "Unauthorized" {
+	if authMessage.Message == "Unauthorized" {
 		result = []string{"Unauthorized"}
 	} else {
-		var id string
-		jsonBody, _ := simplejson.NewJson(bodyText)
-		dataLenth := len(jsonBody.Get("data").MustArray())
-		for i := 0; i < dataLenth; i++ {
-			id, err = jsonBody.Get("data").GetIndex(i).Get("id").String()
-
+		messageData := MessageData{}
+		json.Unmarshal(bodyText, &messageData)
+		for i := 0; i < len(messageData.Data); i++ {
+			id := messageData.Data[i].(map[string]interface{})["id"].(string)
 			if err != nil {
 				logrus.Info(err)
 				result = []string{"ID_NOT_FIND"}
