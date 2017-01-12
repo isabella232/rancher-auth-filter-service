@@ -1,16 +1,23 @@
 rancher-auth-filter-service
 ========
 
-A microservice that does micro things.
+A microservice for validate the token and return account id and environment id.
 
 ## Building
 
 `make`
 
-
+##Parameter
+`   --rancherUrl value  Rancher server url (default: "http://54.255.182.226:8080/") [$RANCHER_SERVER_URL]`
+`   --localport value   Local server port  (default: "8092") [$LOCAL_VALIDATION_FILTER_PORT]`
+   
 ## Running
 
-`./bin/rancher-auth-filter-service`
+`./bin/rancher-auth-filter-service    --rancherUrl <value>    --localport <value> `
+
+Or set the environment variables
+`[$RANCHER_SERVER_URL]`
+`[$LOCAL_VALIDATION_FILTER_PORT]`
 
 ## License
 Copyright (c) 2014-2016 [Rancher Labs, Inc.](http://rancher.com)
