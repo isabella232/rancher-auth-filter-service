@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/rancher/rancher-auth-filter-service/manager"
@@ -37,19 +36,12 @@ func main() {
 	}
 
 	app.Action = func(c *cli.Context) error {
-		if c.GlobalBool("debug") {
-			logrus.SetLevel(logrus.DebugLevel)
-		}
-		textFormatter := &logrus.TextFormatter{
-			FullTimestamp: true,
-		}
-		logrus.SetFormatter(textFormatter)
 
 		manager.URL = c.String("rancherUrl")
 		manager.Port = c.String("localport")
 
 		logrus.Infof("Starting token validation service")
-		logrus.Infof("Rancher server URL:" + manager.URL + ". The validation filter server running on local port:" + manager.Port + ". Cache expire time is " + strconv.Itoa(c.Int("cacheExpireTime")) + ". Cache clean up interval is " + strconv.Itoa(c.Int("cleanupInterval")) + ".")
+		logrus.Infof("Rancher server URL:" + manager.URL + ". The validation filter server running on local port:" + manager.Port)
 		//create mux router
 		router := service.NewRouter()
 		http.Handle("/", router)

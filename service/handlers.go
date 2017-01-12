@@ -31,17 +31,41 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 
 	reqestData := RequestData{}
 	input, err := ioutil.ReadAll(r.Body)
-	json.Unmarshal(input, &reqestData)
-	cookieString := reqestData.Headers["Cookie"][0]
-	tokens := strings.Split(cookieString, ";")
-	var tokenValue string
-	for i := range tokens {
-		if strings.Contains(tokens[i], "token") {
-			tokenValue = strings.Split(tokens[i], "=")[1]
-		}
-
+	praseCookieErr := json.Unmarshal(input, &reqestData)
+	if praseCookieErr != nil {
+		logrus.Info(err)
+		logrus.Infof("Cannot parse the request.")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	cookieString := ""
+	if len(reqestData.Headers["Cookie"]) >= 1 {
+		cookieString = reqestData.Headers["Cookie"][0]
+	} else {
+		logrus.Infof("No Cookie found.")
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
+	tokens := strings.Split(cookieString, ";")
+	tokenValue := ""
+	if len(tokens) > 1 {
+		for i := range tokens {
+			if strings.Contains(tokens[i], "token") {
+				tokenValue = strings.Split(tokens[i], "=")[1]
+			}
+
+		}
+	} else {
+		logrus.Infof("Cannot split cookie string")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if tokenValue == "" {
+		logrus.Infof("No token found")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	if err == nil {
 
 		//check if the token value is empty or not
@@ -105,21 +129,38 @@ func getValue(host string, path string, token string) []string {
 	}
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	authMessage := AuthorizeData{}
-	json.Unmarshal(bodyText, &authMessage)
-
+	err = json.Unmarshal(bodyText, &authMessage)
+	if err != nil {
+		logrus.Info(err)
+		logrus.Infof("Cannot parse the authorization data.")
+		result = []string{"ID_NOT_FIND"}
+		return result
+	}
 	if authMessage.Message == "Unauthorized" {
 		result = []string{"Unauthorized"}
 	} else {
 		messageData := MessageData{}
-		json.Unmarshal(bodyText, &messageData)
+		err = json.Unmarshal(bodyText, &messageData)
+		if err != nil {
+			logrus.Info(err)
+			logrus.Infof("Cannot parse the id.")
+			result = []string{"ID_NOT_FIND"}
+
+		}
+		//get id from the data
 		for i := 0; i < len(messageData.Data); i++ {
-			id := messageData.Data[i].(map[string]interface{})["id"].(string)
-			if err != nil {
-				logrus.Info(err)
-				result = []string{"ID_NOT_FIND"}
-			} else {
-				result = append(result, id)
+
+			idData, suc := messageData.Data[i].(map[string]interface{})
+			if suc {
+				id, suc := idData["id"].(string)
+				if suc {
+					result = append(result, id)
+				} else {
+					logrus.Infof("No id find")
+					result = []string{"ID_NOT_FIND"}
+				}
 			}
+
 		}
 
 	}
