@@ -35,7 +35,7 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 	if praseCookieErr != nil {
 		logrus.Info(err)
 		logrus.Infof("Cannot parse the request.")
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(400)
 		return
 	}
 	cookieString := ""
