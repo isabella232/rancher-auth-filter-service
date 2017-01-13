@@ -176,7 +176,7 @@ func getValue(host string, path string, token string) []string {
 			idData, suc := messageData.Data[i].(map[string]interface{})
 			if suc {
 				id, suc := idData["id"].(string)
-				name, namesuc := idData["uuid"].(string)
+				name, namesuc := idData["kind"].(string)
 				if suc && namesuc {
 					result = append(result, id)
 					//if the token belongs to admin, only return the admin token
