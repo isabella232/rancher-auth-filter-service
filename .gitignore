@@ -5,3 +5,4 @@
 /.trash-cache
 debug
 rancher-auth-filter-service
+/.vscode
