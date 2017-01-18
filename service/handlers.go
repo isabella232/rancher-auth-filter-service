@@ -147,9 +147,9 @@ func ValidationHandler(w http.ResponseWriter, r *http.Request) {
 			headerBody[k] = v
 		}
 
-		headerBody["X-API-Project-Id"] = []string{accountID}
+		headerBody["X-API-Account-Id"] = []string{accountID}
 		if projectID != "" {
-			headerBody["X-API-Account-Id"] = []string{projectID}
+			headerBody["X-API-Project-Id"] = []string{projectID}
 		}
 		// var responseBody RequestData
 		reqestData.Headers = headerBody
