@@ -23,7 +23,7 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "rancherUrl",
-			Value:  "http://54.255.182.226:8080/",
+			Value:  "http://54.169.69.238:8080/",
 			Usage:  "Rancher server url",
 			EnvVar: "RANCHER_SERVER_URL",
 		},
